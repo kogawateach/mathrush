@@ -292,6 +292,41 @@ function problem(t){
   }
   return {q:`${a} ${symbol} ${b}`,ans,dmg:50};
 }
+// Curriculum-driven, compact arithmetic questions for each city's five stages.
+const stageSkills=[
+ ['1桁＋1桁・繰り上がりなし','1桁＋1桁・繰り上がりあり','2桁＋1桁','2桁＋2桁・和は2桁','2桁＋2桁・制限なし','総合ボス'],
+ ['1桁−1桁','2桁−1桁・繰り下がりなし','2桁−1桁・繰り下がりあり','2桁−2桁・繰り下がりなし','2桁−2桁・制限なし','総合ボス'],
+ ['九九・2〜3の段','九九・4〜5の段','九九・6〜7の段','九九・8〜9の段','九九・総合','総合ボス'],
+ ['割り算・2〜3の段','割り算・4〜5の段','割り算・6〜7の段','割り算・8〜9の段','割り算・総合','総合ボス'],
+ ['四則・足し算と引き算','四則・掛け算と割り算','四則・足し算と掛け算','四則・引き算と割り算','四則・総合','総合ボス']
+];
+let cityProgress=[1,1,1,1,1],cityRestoration=[0,0,0,0,0];
+try{const saved=JSON.parse(localStorage.getItem('mathrushCityProgressV79')||'null');if(Array.isArray(saved))cityProgress=cityProgress.map((v,i)=>Math.max(1,Math.min(7,Number(saved[i])||1)));else{for(let i=0;i<5;i++)cityProgress[i]=Math.max(1,Math.min(7,unlocked-i*6));}const restored=JSON.parse(localStorage.getItem('mathrushCityRestorationV79')||'null');if(Array.isArray(restored))cityRestoration=cityRestoration.map((v,i)=>Math.max(0,Math.min(3,Number(restored[i])||0)));}catch(e){}
+function saveCities(){try{localStorage.setItem('mathrushCityProgressV79',JSON.stringify(cityProgress));localStorage.setItem('mathrushCityRestorationV79',JSON.stringify(cityRestoration))}catch(e){}}
+function stageProblem(t){
+ if(gameMode!=='stage')return problem(t);
+ const w=stageWorld, level=stageLevel===6?rand(1,5):stageLevel;
+ let a,b,ans,sign;
+ if(w===0){
+  if(level===1){a=rand(1,8);b=rand(1,9-a)}
+  if(level===2){a=rand(2,9);b=rand(10-a,9)}
+  if(level===3){a=rand(10,99);b=rand(1,9)}
+  if(level===4){a=rand(10,79);b=rand(10,Math.min(99,99-a))}
+  if(level===5){a=rand(10,99);b=rand(10,99)}
+  return {q:`${a} + ${b}`,ans:a+b,dmg:50};
+ }
+ if(w===1){
+  if(level===1){a=rand(1,9);b=rand(1,a)}
+  if(level===2){a=rand(11,99);b=rand(1,Math.min(9,a%10||9));if(a%10===0){a++;b=1}}
+  if(level===3){a=rand(11,99);if(a%10===9)a--;b=rand(a%10+1,9)}
+  if(level===4){a=rand(20,99);b=rand(10,Math.min(99,a));let tries=0;while((a%10<b%10)&&tries++<50)b=rand(10,a)}
+  if(level===5){a=rand(20,99);b=rand(10,a)}
+  return {q:`${a} − ${b}`,ans:a-b,dmg:50};
+ }
+ if(w===2||w===3){let bands=[[2,3],[4,5],[6,7],[8,9],[2,9]];let [lo,hi]=bands[level-1];a=rand(lo,hi);b=rand(1,9);return w===2?{q:`${a} × ${b}`,ans:a*b,dmg:50}:{q:`${a*b} ÷ ${a}`,ans:b,dmg:50};}
+ const operations=[[0,1],[2,3],[0,2],[1,3],[0,1,2,3]][level-1];return problem(operations[rand(0,operations.length-1)]);
+}
+function bossStageProblem(){const t=stageWorld, lvl=rand(1,5), old=stageLevel;stageLevel=lvl;const q=stageProblem(t);stageLevel=old;return q;}
 function makeOptions(q){
   if(q.integral){
     const arr=[q.ans,...q.wrong];
@@ -306,7 +341,7 @@ function formatMath(v){
   return String(v).replaceAll('²','<sup>2</sup>').replaceAll('³','<sup>3</sup>').replaceAll('⁴','<sup>4</sup>');
 }
 let coins=0,ownedGold=false,equipGold=false;try{coins=Number(localStorage.getItem('mathrushIntegralCoins')||0);ownedGold=localStorage.getItem('mathrushGoldOwned')==='1';equipGold=localStorage.getItem('mathrushGoldEquipped')==='1'}catch(e){}function saveCoins(){try{localStorage.setItem('mathrushIntegralCoins',String(coins))}catch(e){}}function currency(n){return `<svg class="math-coin-symbol" viewBox="0 0 74 100" xmlns="http://www.w3.org/2000/svg" aria-label="数学コイン" role="img"><defs><linearGradient id="mathCoinGold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff5a9"/><stop offset=".4" stop-color="#ffd04b"/><stop offset="1" stop-color="#b76b0b"/></linearGradient></defs><path d="M58 27 H15 L38 51 L14 78 H61" fill="none" stroke="#7b4009" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M58 27 H15 L38 51 L14 78 H61" fill="none" stroke="url(#mathCoinGold)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 15 Q19 9 30 13 H65 Q69 13 71 7 M29 15 V92 M49 15 V92" fill="none" stroke="#7b4009" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 15 Q19 9 30 13 H65 Q69 13 71 7 M29 15 V92 M49 15 V92" fill="none" stroke="url(#mathCoinGold)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="coin-amount">${Math.max(0,Math.floor(n)).toLocaleString()}</span>`}function isBoss(){return gameMode==='stage'&&stageLevel===6}function stageGoal(){return isBoss()?1:4+stageLevel}function chooseType(){if(gameMode==='stage')return stageWorld;let elapsed=60-remaining,weights=elapsed<16?[58,26,12,4,0]:elapsed<36?[32,26,21,15,6]:[21,22,22,20,15];let r=rand(1,100),sum=0;for(let i=0;i<5;i++){sum+=weights[i];if(r<=sum)return i}return 0}
-function spawn(force=false){if(state!=='play'||enemies.length>=(isBoss()?1:2))return false;let t=chooseType(),spec=types[t],n=kills;let extra=0;let counts=[0,1,2].map(i=>enemies.filter(x=>x.lane===i).length),min=Math.min(...counts),choices=[0,1,2].filter(i=>counts[i]===min);let lane=isBoss()?1:choices[rand(0,choices.length-1)];let e={id:++serial,lane,t,progress:isBoss()?.42:0,hp:isBoss()?spec.hp*5:spec.hp,max:isBoss()?spec.hp*5:spec.hp,question:problem(t),next:performance.now()+spec.travel,entered:performance.now(),hitByEnemy:false,nextFire:performance.now()+rand(1800,3500),warning:false,anim:'enter',animUntil:performance.now()+350};enemies.push(e);syncTarget();sfx('spawn');drawEnemies();drawAnswers();return true}
+function spawn(force=false){if(state!=='play'||enemies.length>=(isBoss()?1:2))return false;let t=chooseType(),spec=types[t],n=kills;let extra=0;let counts=[0,1,2].map(i=>enemies.filter(x=>x.lane===i).length),min=Math.min(...counts),choices=[0,1,2].filter(i=>counts[i]===min);let lane=isBoss()?1:choices[rand(0,choices.length-1)];let e={id:++serial,lane,t,progress:isBoss()?.42:0,hp:isBoss()?spec.hp*5:spec.hp,max:isBoss()?spec.hp*5:spec.hp,question:stageProblem(t),next:performance.now()+spec.travel,entered:performance.now(),hitByEnemy:false,nextFire:performance.now()+rand(1800,3500),warning:false,anim:'enter',animUntil:performance.now()+350};enemies.push(e);syncTarget();sfx('spawn');drawEnemies();drawAnswers();return true}
 function front(lane){return enemies.filter(e=>e.lane===lane).sort((a,b)=>a.id-b.id)[0]||null}
 function syncLane(){selected=front(selectedLane)?.id??null}
 function autoSelect(){if(!enemies.length){selected=null;return}let e=[...enemies].sort((a,b)=>b.progress-a.progress)[0];selectedLane=e.lane;syncLane()}
@@ -359,7 +394,7 @@ function updatePower(now){
   if(now<pierceUntil){$('powerStatus').style.display='block';$('powerStatus').textContent='⚡ PIERCE '+((pierceUntil-now)/1000).toFixed(1)+'s'}
   else{$('powerStatus').style.display='none'}
 }
-function resolveAnswer(value,pierceIds=null){if(state!=='play')return;let e=enemies.find(x=>x.id===selected),q=powerQuestion||healQuestion||e?.question;if(!q)return;attempts++;let ok=value===q.ans;if(ok){correct++;combo++;maxCombo=Math.max(maxCombo,combo);let comboBonus=combo%5===0?100:0;if(comboBonus)score+=comboBonus;if(powerQuestion){powerQuestion=null;$('powerChallenge').style.display='none';pierceUntil=performance.now()+10000;autoMode=true;manualOverrideUntil=0;syncTarget();$('hero').classList.add('super');float('⚡ SUPER BEAM!','#fcd34d','score');banner('⚡ PIERCE 10s!');note(990,.2,.06,'triangle')}else if(healQuestion){$('healChallenge').style.display='none';hp=Math.min(100,hp+40);float('+40 HP'+(comboBonus?'\nCOMBO +100 pt':''),'#4ade80','hp');sfx('heal');healQuestion=null;healCooldown=performance.now()+4000}else if(e){e.hp=Math.max(0,e.hp-(isBoss()?e.max/5:e.t===4?200:e.max));e.anim='hit';e.animUntil=performance.now()+320;sfx('ok');if(e.hp===0){let idx=enemies.indexOf(e);let points=[100,150,200,250,400][e.t];score+=points;kills++;let pierceExtra=0,pierceCount=0;if(pierceIds){for(const id of pierceIds){const back=enemies.find(x=>x.id===id);if(!back||back===e)continue;pierceExtra+=[100,150,200,250,400][back.t];pierceCount++;kills++;enemies.splice(enemies.indexOf(back),1)}score+=pierceExtra}float('+'+(points+pierceExtra+comboBonus)+' pt'+(pierceCount?'\n⚡ PIERCE ×'+(pierceCount+1):'')+(comboBonus?'\nCOMBO BONUS +100':''),'#5cf5a5','score');sfx('kill');e.anim='dead';e.animUntil=performance.now()+380;enemies.splice(idx,1);syncTarget();let rr=run;setTimeout(()=>{if(state==='play'&&run===rr&&!isBoss()&&enemies.length<2)spawn()},380)}else{e.question=problem(e.t);e.progress=0;e.entered=performance.now();e.nextFire=performance.now()+2500;e.anim='knockback';e.animUntil=performance.now()+550;float('💥 KNOCKBACK!','#fcd34d','score');if(comboBonus)float('COMBO +100 pt','#ffd06c','score')}}}else{combo=0;hp=Math.max(0,hp-30);float('MISS −30 HP','#fb7185','hp');sfx('bad');shake();shakeHP();if(powerQuestion){powerQuestion=null;$('powerChallenge').style.display='none';banner('⚡ POWER-UP FAILED')}else if(healQuestion){$('healChallenge').style.display='none';healQuestion=null;healCooldown=performance.now()+4000}else if(e)e.question=problem(e.t)}if(hp<=0){end('KO');return}updateHUD();drawEnemies();drawAnswers();healCheck()}
+function resolveAnswer(value,pierceIds=null){if(state!=='play')return;let e=enemies.find(x=>x.id===selected),q=powerQuestion||healQuestion||e?.question;if(!q)return;attempts++;let ok=value===q.ans;if(ok){correct++;combo++;maxCombo=Math.max(maxCombo,combo);let comboBonus=combo%5===0?100:0;if(comboBonus)score+=comboBonus;if(powerQuestion){powerQuestion=null;$('powerChallenge').style.display='none';pierceUntil=performance.now()+10000;autoMode=true;manualOverrideUntil=0;syncTarget();$('hero').classList.add('super');float('⚡ SUPER BEAM!','#fcd34d','score');banner('⚡ PIERCE 10s!');note(990,.2,.06,'triangle')}else if(healQuestion){$('healChallenge').style.display='none';hp=Math.min(100,hp+40);float('+40 HP'+(comboBonus?'\nCOMBO +100 pt':''),'#4ade80','hp');sfx('heal');healQuestion=null;healCooldown=performance.now()+4000}else if(e){e.hp=Math.max(0,e.hp-(isBoss()?e.max/5:e.t===4?200:e.max));e.anim='hit';e.animUntil=performance.now()+320;sfx('ok');if(e.hp===0){let idx=enemies.indexOf(e);let points=[100,150,200,250,400][e.t];score+=points;kills++;let pierceExtra=0,pierceCount=0;if(pierceIds){for(const id of pierceIds){const back=enemies.find(x=>x.id===id);if(!back||back===e)continue;pierceExtra+=[100,150,200,250,400][back.t];pierceCount++;kills++;enemies.splice(enemies.indexOf(back),1)}score+=pierceExtra}float('+'+(points+pierceExtra+comboBonus)+' pt'+(pierceCount?'\n⚡ PIERCE ×'+(pierceCount+1):'')+(comboBonus?'\nCOMBO BONUS +100':''),'#5cf5a5','score');sfx('kill');e.anim='dead';e.animUntil=performance.now()+380;enemies.splice(idx,1);syncTarget();let rr=run;setTimeout(()=>{if(state==='play'&&run===rr&&!isBoss()&&enemies.length<2)spawn()},380)}else{e.question=stageProblem(e.t);e.progress=0;e.entered=performance.now();e.nextFire=performance.now()+2500;e.anim='knockback';e.animUntil=performance.now()+550;float('💥 KNOCKBACK!','#fcd34d','score');if(comboBonus)float('COMBO +100 pt','#ffd06c','score')}}}else{combo=0;hp=Math.max(0,hp-30);float('MISS −30 HP','#fb7185','hp');sfx('bad');shake();shakeHP();if(powerQuestion){powerQuestion=null;$('powerChallenge').style.display='none';banner('⚡ POWER-UP FAILED')}else if(healQuestion){$('healChallenge').style.display='none';healQuestion=null;healCooldown=performance.now()+4000}else if(e)e.question=stageProblem(e.t)}if(hp<=0){end('KO');return}updateHUD();drawEnemies();drawAnswers();healCheck()}
 function fireEnemyBullet(e,now){
  const node=$('slots').querySelector('[data-id="'+e.id+'"]');if(!node)return;
  const ar=$('arena').getBoundingClientRect(),r=node.getBoundingClientRect();
@@ -435,15 +470,7 @@ let until=(1-e.progress)*types[e.t].travel;if(until<=1300&&until>0&&!e.warning){
 updateEnemyBullets(now);if(state!=='play')return;if(changed){syncTarget();drawAnswers()}updateHUD();if(changed){drawEnemies()}else if(now-last>=170){enemies.forEach(e=>{let node=$('slots').querySelector('[data-id="'+e.id+'"]');if(!node)return;let lit=Math.min(5,Math.floor(e.progress*5));node.querySelectorAll('.lights i').forEach((el,j)=>{el.classList.toggle('on',j<lit);el.classList.toggle('danger',j<lit&&e.progress>=.88)})});last=now}enemies.forEach(e=>{let node=$('slots').querySelector('[data-id="'+e.id+'"]');if(node)node.style.setProperty('--advance',(e.progress*105).toFixed(1))})}
 
 let bossHP=0,bossMax=0,bossNextAttack=0,bossQuestion=null,bossBusy=false;
-function bossProblem(){
-  const op=stageWorld===4?rand(0,3):stageWorld,angry=bossHP<=bossMax/2;
-  let a,b,ans,symbol;
-  if(op===0){a=rand(angry?30:11,angry?89:49);b=rand(11,angry?79:49);ans=a+b;symbol='+';if(angry&&Math.random()<.45){const c=rand(2,20);return {q:`${a} + ${b} + ${c}`,ans:ans+c}}}
-  else if(op===1){a=rand(angry?70:40,99);b=rand(11,angry?69:39);if(a<b)[a,b]=[b,a];ans=a-b;symbol='−'}
-  else if(op===2){a=rand(angry?12:6,angry?24:15);b=rand(4,angry?15:9);ans=a*b;symbol='×'}
-  else {b=rand(2,angry?15:9);ans=rand(3,angry?18:12);a=b*ans;symbol='÷'}
-  return {q:`${a} ${symbol} ${b}`,ans};
-}
+function bossProblem(){return bossStageProblem()}
 function startBoss(){
  resetEnemyBullets();clearInterval(timer);clearTimeout(healTimer);musicStop();run++;state='boss';gameMode='stage';
  bossMax=[10,14,18,22,26][stageWorld];bossHP=bossMax;hp=100;kills=0;score=0;combo=0;maxCombo=0;correct=0;attempts=0;bossBusy=false;
@@ -458,7 +485,7 @@ function bossDraw(){if(state!=='boss')return;$('bossBar').style.width=(bossHP/bo
 function bossAnswer(v){if(state!=='boss'||bossBusy)return;bossBusy=true;attempts++;if(v===bossQuestion.ans){correct++;combo++;maxCombo=Math.max(combo,maxCombo);score+=100;sfx('ok');bossHP--;const beam=$('bossBeam');beam.classList.remove('shoot','enemy-shoot');void beam.offsetWidth;beam.classList.add('shoot');const f=$('bossFigure');f.classList.remove('boss-hit');void f.offsetWidth;f.classList.add('boss-hit');$('bossFeedback').textContent='⚔️ HIT! ボスにダメージ！';if(bossHP<=0){kills=1;bossDraw();setTimeout(()=>{if(state==='boss'){$('overlay').classList.remove('boss-overlay');end('STAGE CLEAR')}},400);return}}else{combo=0;hp=Math.max(0,hp-12);sfx('bad');$('bossFeedback').textContent='❌ ミス！ HP −12';if(hp<=0){bossDraw();setTimeout(()=>{if(state==='boss'){$('overlay').classList.remove('boss-overlay');end('KO')}},350);return}}bossDraw();setTimeout(()=>{if(state==='boss'){bossNextQuestion();bossBusy=false}},220)}
 function bossTick(){if(state!=='boss')return;const now=performance.now(),angry=bossHP<=bossMax/2;const left=Math.max(0,(bossNextAttack-now)/1000);$('bossTimer').textContent='次の攻撃まで '+Math.ceil(left)+'秒';if(now>=bossNextAttack){hp=Math.max(0,hp-(angry?18:10));sfx('attack');const beam=$('bossBeam');beam.classList.remove('shoot','enemy-shoot');void beam.offsetWidth;beam.classList.add('enemy-shoot');$('bossFeedback').textContent='💥 ボスの攻撃！ HP −'+(angry?18:10);bossNextAttack=now+(angry?4200:7000);bossDraw();if(hp<=0){$('overlay').classList.remove('boss-overlay');end('KO')}}}
 function start(){if(isBoss()){startBoss();return}resetEnemyBullets();clearInterval(timer);clearTimeout(healTimer);musicStop();run++;state='play';autoMode=false;manualOverrideUntil=0;pierceUntil=0;powerQuestion=null;$('powerChallenge').style.display='none';$('hero').classList.remove('super');powerHide();timeHide();$('powerStatus').style.display='none';enemies=[];selected=null;selectedLane=isBoss()?1:0;shotBusy=false;healQuestion=null;healAvailable=false;healGuaranteed=false;healEver=false;healTimer=null;healExpires=0;healCooldown=0;answerKey=null;score=0;kills=0;combo=0;maxCombo=0;correct=0;attempts=0;quickKills=0;hp=100;remaining=60;serial=0;$('fx').innerHTML='';$('heal').style.display='none';$('healChallenge').style.display='none';$('overlay').style.display='none';let now=performance.now();lastTick=now;endAt=now+60000;nextSpawn=isBoss()?Number.POSITIVE_INFINITY:now+8000;nextPowerAt=now+9000;nextTimeAt=now+16000;spawn(true);updateMode();updateHUD();drawAnswers();musicStart();timer=setInterval(tick,45)}
-function end(reason){if(state!=='play'&&state!=='boss')return;state='end';resetEnemyBullets();pierceUntil=0;powerQuestion=null;$('powerChallenge').style.display='none';$('hero').classList.remove('super');powerHide();timeHide();$('powerStatus').style.display='none';clearInterval(timer);clearTimeout(healTimer);healTimer=null;musicStop();healQuestion=null;$('healChallenge').style.display='none';hideFairy();if(gameMode==='arcade')remaining=Math.max(0,(endAt-performance.now())/1000);if(gameMode==='stage'&&reason==='STAGE CLEAR'){const index=stageWorld*6+stageLevel;if(index>=unlocked){unlocked=Math.min(30,index+1);try{localStorage.setItem('mathRushUnlockedV75',unlocked)}catch(e){}}}let perfect=attempts>0&&attempts===correct?500:0;let survival=reason==='TIME UP'&&hp===100?500:0;let finalScore=score+perfect+survival;let earned=gameMode==='stage'&&reason==='STAGE CLEAR'?finalScore:0;if(earned){coins+=earned;saveCoins()}let newBest=gameMode==='arcade'&&finalScore>best;if(newBest){best=finalScore;try{localStorage.setItem('mathRushBestV4',best)}catch(e){}}$('overlay').style.display='flex';$('overlay').classList.remove('world-overlay','title-overlay','subpage-overlay','boss-overlay');$('overlay').innerHTML=`<div style="font-size:34px">${reason==='STAGE CLEAR'?'🏆':reason==='KO'?'💀':'⏱️'}</div><h2>${reason==='STAGE CLEAR'?'STAGE CLEAR!':reason==='KO'?'GAME OVER':'TIME UP!'}</h2><div class="sub">${gameMode==='stage'?'GET MATH COINS':'TOTAL SCORE'}</div><div style="font-size:46px;font-weight:1000;color:#fcd34d">${gameMode==='stage'?currency(earned):finalScore.toLocaleString()}</div><div class="high">${gameMode==='stage'?'💰 獲得 '+currency(earned)+'　｜　所持 '+currency(coins):(newBest?'🏆 NEW RECORD!':'BEST '+best.toLocaleString())}</div><div class="result"><div><b>${kills}</b><span>MONSTERS DEFEATED</span></div><div><b>${attempts?Math.round(correct/attempts*100):0}%</b><span>ACCURACY</span></div><div><b>×${maxCombo}</b><span>MAX COMBO</span></div><div><b>+${perfect}</b><span>PERFECT BONUS</span></div><div><b>+${survival}</b><span>FULL HP BONUS</span></div></div>${gameMode==='stage'&&reason==='STAGE CLEAR'&&stageWorld*6+stageLevel<30?'<button class="primary" id="nextStage">➡️ 次のステージへ</button>':''}<button class="primary" id="again">▶ RETRY</button><button class="primary" id="backMap" style="margin-top:8px;background:#334c75">🗺️ WORLD MAP</button>`;$('again').onclick=start;$('backMap').onclick=gameMode==='stage'?showMap:showTitle;const next=$('nextStage');if(next)next.onclick=()=>{if(stageLevel===6){stageWorld++;stageLevel=1}else stageLevel++;gameMode='stage';start()};updateHUD();drawAnswers()}
+function end(reason){if(state!=='play'&&state!=='boss')return;state='end';resetEnemyBullets();pierceUntil=0;powerQuestion=null;$('powerChallenge').style.display='none';$('hero').classList.remove('super');powerHide();timeHide();$('powerStatus').style.display='none';clearInterval(timer);clearTimeout(healTimer);healTimer=null;musicStop();healQuestion=null;$('healChallenge').style.display='none';hideFairy();if(gameMode==='arcade')remaining=Math.max(0,(endAt-performance.now())/1000);if(gameMode==='stage'&&reason==='STAGE CLEAR'){cityProgress[stageWorld]=Math.max(cityProgress[stageWorld],stageLevel+1);saveCities()}let perfect=attempts>0&&attempts===correct?500:0;let survival=reason==='TIME UP'&&hp===100?500:0;let finalScore=score+perfect+survival;let earned=gameMode==='stage'&&reason==='STAGE CLEAR'?finalScore:0;if(earned){coins+=earned;saveCoins()}let newBest=gameMode==='arcade'&&finalScore>best;if(newBest){best=finalScore;try{localStorage.setItem('mathRushBestV4',best)}catch(e){}}$('overlay').style.display='flex';$('overlay').classList.remove('world-overlay','title-overlay','subpage-overlay','boss-overlay');$('overlay').innerHTML=`<div style="font-size:34px">${reason==='STAGE CLEAR'?'🏆':reason==='KO'?'💀':'⏱️'}</div><h2>${reason==='STAGE CLEAR'?'STAGE CLEAR!':reason==='KO'?'GAME OVER':'TIME UP!'}</h2><div class="sub">${gameMode==='stage'?'GET MATH COINS':'TOTAL SCORE'}</div><div style="font-size:46px;font-weight:1000;color:#fcd34d">${gameMode==='stage'?currency(earned):finalScore.toLocaleString()}</div><div class="high">${gameMode==='stage'?'💰 獲得 '+currency(earned)+'　｜　所持 '+currency(coins):(newBest?'🏆 NEW RECORD!':'BEST '+best.toLocaleString())}</div><div class="result"><div><b>${kills}</b><span>MONSTERS DEFEATED</span></div><div><b>${attempts?Math.round(correct/attempts*100):0}%</b><span>ACCURACY</span></div><div><b>×${maxCombo}</b><span>MAX COMBO</span></div><div><b>+${perfect}</b><span>PERFECT BONUS</span></div><div><b>+${survival}</b><span>FULL HP BONUS</span></div></div>${gameMode==='stage'&&reason==='STAGE CLEAR'&&stageLevel<6?'<button class="primary" id="nextStage">➡️ 次のステージへ</button>':''}<button class="primary" id="again">▶ RETRY</button><button class="primary" id="backMap" style="margin-top:8px;background:#334c75">🗺️ WORLD MAP</button>`;$('again').onclick=start;$('backMap').onclick=gameMode==='stage'?showMap:showTitle;const next=$('nextStage');if(next)next.onclick=()=>{stageLevel++;gameMode='stage';start()};updateHUD();drawAnswers()}
 // Tap one of the three lane buttons. Highlight the selected lane.
 document.querySelectorAll('.lane-btn').forEach(btn=>{
   btn.addEventListener('click',()=>chooseLane(Number(btn.dataset.go)));
@@ -473,7 +500,7 @@ drawEnemies=function(){
   });
 };
 
-const worlds=[['➕','足し算の島','スライム'],['➖','引き算の島','コウモリ'],['✖️','かけ算の島','ゴブリン'],['➗','割り算の島','ゴースト'],['🐉','四則演算の島','ドラゴン']];
+const worlds=[['➕','足し算の街','スライム'],['➖','引き算の街','コウモリ'],['✖️','かけ算の街','ゴブリン'],['➗','割り算の街','ゴースト'],['🐉','四則演算の街','ドラゴン']];
 function worldOverlay(html){state='menu';$('overlay').style.display='flex';$('overlay').classList.add('world-overlay');$('overlay').innerHTML=html}
 function menuScreen(title,body){
   worldOverlay(`<div class="menu-page"><div class="menu-top"><button class="menu-back" id="menuBack">← タイトルへ</button><strong>${title}</strong></div>${body}</div>`);
@@ -482,20 +509,30 @@ function menuScreen(title,body){
 }
 function showTitle(){
   gameMode='arcade';
-  worldOverlay(`<div class="title-brand"><div class="title-spark">⚡ 🏝️ ⚡</div><h1>MATH RUSH</h1><p>計算でモンスターを倒そう！</p></div><div class="title-actions"><button class="primary" id="goMap">🗺️ 冒険モード</button><button class="primary arcade-btn" id="goArcade">⚡ 60秒 スコアアタック</button></div><div class="title-grid"><button id="goRank">🏆<span>ランキング</span></button><button id="goDex">📖<span>モンスター図鑑</span></button><button id="goAwards">🏅<span>実績・メダル</span></button><button id="goSettings">⚙️<span>設定</span></button><button id="goShop">🛒<span>ショップ</span></button></div><div class="high">💰 ${currency(coins)}　｜　🏆 BEST ${best.toLocaleString()}</div><div class="title-version">v7.8 · MATH COINS</div>`);
+  worldOverlay(`<div class="title-brand"><div class="title-spark">⚡ 🏘️ ⚡</div><h1>MATH RUSH</h1><p>計算でモンスターを倒そう！</p></div><div class="title-actions"><button class="primary" id="goMap">🗺️ 冒険モード</button><button class="primary arcade-btn" id="goArcade">⚡ 60秒 スコアアタック</button></div><div class="title-grid"><button id="goRank">🏆<span>ランキング</span></button><button id="goDex">📖<span>モンスター図鑑</span></button><button id="goAwards">🏅<span>実績・メダル</span></button><button id="goSettings">⚙️<span>設定</span></button><button id="goShop">🛒<span>ショップ</span></button><button id="goRecords">📋<span>攻略記録</span></button><button id="goRestore">🏘️<span>街の復興</span></button></div><div class="high">💰 ${currency(coins)}　｜　🏆 BEST ${best.toLocaleString()}</div><div class="title-version">v7.9 · CITY RESTORATION</div>`);
   $('overlay').classList.remove('world-overlay','subpage-overlay');$('overlay').classList.add('title-overlay');
   $('goArcade').onclick=()=>{gameMode='arcade';$('overlay').classList.remove('world-overlay','title-overlay','subpage-overlay');start()};
   $('goMap').onclick=showMap;
-  $('goShop').onclick=showShop;
+  $('goShop').onclick=showShop;$('goRecords').onclick=showRecords;$('goRestore').onclick=showRestoration;
   $('goRank').onclick=()=>menuScreen('🏆 ランキング',`<div class="menu-panel"><div class="menu-big">🏆 ${best.toLocaleString()} pt</div><p>あなたの60秒スコアアタック最高記録</p><small>世界ランキングは今後追加予定</small></div>`);
   $('goDex').onclick=()=>menuScreen('📖 モンスター図鑑',`<div class="dex-list">${[['🟢','スライム','足し算'],['🦇','コウモリ','引き算'],['👺','ゴブリン','掛け算'],['👻','ゴースト','割り算'],['🐉','ドラゴン','四則演算・2回攻撃']].map(([e,n,d])=>`<div class="dex-row"><span>${e}</span><div><strong>${n}</strong><small>${d}</small></div></div>`).join('')}</div>`);
-  $('goAwards').onclick=()=>menuScreen('🏅 実績・メダル',`<div class="menu-panel"><div class="menu-big">⭐ ${Math.max(0,unlocked-1)} / 30</div><p>クリア済みステージ</p><p>${unlocked>6?'🏅 足し算の島を突破！':'🔒 足し算の島を突破しよう'}</p><small>メダルの種類は今後追加予定</small></div>`);
+  $('goAwards').onclick=()=>menuScreen('🏅 実績・メダル',`<div class="menu-panel"><div class="menu-big">⭐ ${cityProgress.reduce((n,p)=>n+Math.min(6,p-1),0)} / 30</div><p>クリア済みステージ</p><p>${cityProgress[0]>6?'🏅 足し算の街を突破！':'🔒 足し算の街を突破しよう'}</p><small>メダルの種類は今後追加予定</small></div>`);
   $('goSettings').onclick=()=>menuScreen('⚙️ 設定',`<div class="menu-panel"><p>BGM・効果音</p><button class="primary" id="toggleMusic">${muted?'🔇 OFF':'🔊 ON'}</button><small>音量はiPhone本体で調整できます</small></div>`);
   // Attach the settings toggle after that page is opened.
   const settings=$('goSettings').onclick;
   $('goSettings').onclick=()=>{settings();$('toggleMusic').onclick=()=>{muted=!muted;$('sound').textContent=muted?'🔇 BGM OFF':'🔊 BGM ON';$('toggleMusic').textContent=muted?'🔇 OFF':'🔊 ON';if(muted)musicStop()}};
 }
 function showShop(){menuScreen('🛒 ショップ',`<div class="menu-panel"><div class="menu-big">💰 ${currency(coins)}</div><p>冒険で集めた数学コインで装備を買おう！</p><div style="font-size:45px">✨🚀✨</div><strong>ゴールドキャノン</strong><p>大砲の色が金色になる装備（性能は同じ）</p><button class="primary" id="buyGold">${ownedGold?(equipGold?'装備中 ✓':'装備する'):'💰 '+currency(1000)+' で購入'}</button><small>ショップの商品はこれから増やせるよ</small></div>`);$('buyGold').onclick=()=>{if(!ownedGold){if(coins<1000){$('buyGold').textContent='コインが足りない！';return}coins-=1000;saveCoins();ownedGold=true;try{localStorage.setItem('mathrushGoldOwned','1')}catch(e){}}equipGold=!equipGold;try{localStorage.setItem('mathrushGoldEquipped',equipGold?'1':'0')}catch(e){}showShop()}}
+function showRecords(){
+ const content=worlds.map((w,i)=>`<div class="menu-panel"><strong>${w[0]} ${w[1]}</strong>${stageSkills[i].map((name,j)=>`<div style="display:flex;gap:9px;justify-content:space-between;text-align:left;padding:7px 0;border-bottom:1px solid #ffffff22;font-size:12px"><span>${i+1}-${j+1} ${name}</span><span>${j+1<cityProgress[i]?'✅':j+1===cityProgress[i]?'▶️':'🔒'}</span></div>`).join('')}</div>`).join('');
+ menuScreen('📋 攻略記録',`<div style="max-height:70vh;overflow:auto">${content}</div>`);
+}
+function showRestoration(){
+ const names=['瓦礫の撤去','家屋の修復','広場の再建'],costs=[300,700,1500];
+ const html=`<div class="menu-panel"><div class="menu-big">${currency(coins)}</div><p>戦闘で稼いだコインを使って、好きな街を復興しよう！</p></div>`+worlds.map((w,i)=>`<div class="menu-panel"><strong>${w[0]} ${w[1]}</strong><p style="font-size:12px">${['🌫️ 荒廃した街','🧹 道がきれいになった','🏠 家に人が戻った','🌸 活気ある街'][cityRestoration[i]]} · ${cityRestoration[i]}/3</p>${cityRestoration[i]<3?`<button class="primary" data-restore="${i}">${names[cityRestoration[i]]} · ${currency(costs[cityRestoration[i]])}</button>`:'<p>🎉 復興完了！</p>'}</div>`).join('');
+ menuScreen('🏘️ 街の復興',`<div style="max-height:72vh;overflow:auto">${html}</div>`);
+ $('overlay').querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.restore),cost=costs[cityRestoration[i]];if(coins<cost){b.textContent='コインが足りない！';return}coins-=cost;cityRestoration[i]++;saveCoins();saveCities();showRestoration()});
+}
 function showMap(){
   $('overlay').classList.remove('title-overlay');
   // Five islands and 25 directly tappable stage markers, arranged as a scrolling map.
@@ -503,13 +540,13 @@ function showMap(){
   const spots=[[15,59],[34,70],[55,59],[74,70],[83,43],[49,34]];
   const islands=worlds.map((w,i)=>{
     const nodes=spots.map(([x,y],j)=>{
-      const n=i*6+j+1,locked=n>unlocked,done=n<unlocked;
-      return `<button type="button" class="map-node ${done?'cleared':''} ${n===unlocked?'current':''}" style="left:calc(${x}% - 21px);top:calc(${y}% - 21px)" data-mapstage="${i},${j+1}" ${locked?'disabled':''} aria-label="${i+1}-${j+1} ${locked?'未解放':'開始'}">${locked?'🔒':(j===5?'👑':`${i+1}-${j+1}`)}</button>`;
+      const n=i*6+j+1,locked=j+1>cityProgress[i],done=j+1<cityProgress[i];
+      return `<button type="button" class="map-node ${done?'cleared':''} ${j+1===cityProgress[i]?'current':''}" style="left:calc(${x}% - 21px);top:calc(${y}% - 21px)" data-mapstage="${i},${j+1}" ${locked?'disabled':''} aria-label="${i+1}-${j+1} ${locked?'未解放':'開始'}">${locked?'🔒':(j===5?'👑':`${i+1}-${j+1}`)}</button>`;
     }).join('');
-    return `<div class="map-land w${i}"><div class="map-island-name">${w[0]} ${w[1]}</div><div class="map-decoration">${['🌳','🦇','🌋','🏔️','🏰'][i]}</div>${nodes}</div>`;
+    return `<div class="map-land w${i}"><div class="map-island-name">${w[0]} ${w[1]} ${["🌫️","🧹","🏠","🌸"][cityRestoration[i]]}</div><div class="map-decoration">${['🌳','🦇','🌋','🏔️','🏰'][i]}</div>${nodes}</div>`;
   }).join('');
   const waves=[[14,110],[78,235],[9,440],[83,665],[12,850],[79,1090]].map(([x,y])=>`<span class="map-watermark" style="left:${x}%;top:${y}px">〰️</span>`).join('');
-  worldOverlay(`<div class="map-header"><div><small>⚡ MATH RUSH</small><strong>🏝️ WORLD MAP</strong></div><button class="map-back" id="toTitle">← 戻る</button></div><div class="map-scroll" id="mapScroll"><div class="map-world">${waves}${islands}<div class="map-bottom">● ステージ番号をタップして出発！</div></div></div>`);
+  worldOverlay(`<div class="map-header"><div><small>⚡ MATH RUSH</small><strong>🏘️ CITY MAP</strong></div><button class="map-back" id="toTitle">← 戻る</button></div><div class="map-scroll" id="mapScroll"><div class="map-world">${waves}${islands}<div class="map-bottom">● ステージ番号をタップして出発！</div></div></div>`);
   $('overlay').querySelectorAll('[data-mapstage]').forEach(b=>b.onclick=()=>{
     const [w,n]=b.dataset.mapstage.split(',').map(Number);
     stageWorld=w;stageLevel=n;gameMode='stage';
@@ -518,10 +555,10 @@ function showMap(){
   });
   $('toTitle').onclick=showTitle;
   const sc=$('mapScroll');
-  const focusWorld=Math.min(4,Math.floor((unlocked-1)/6));
+  const focusWorld=0;
   requestAnimationFrame(()=>{sc.scrollTop=Math.max(0,ys[focusWorld]-Math.max(140,sc.clientHeight*.38))});
 }
-function showStages(w){stageWorld=w;worldOverlay(`<h1>${worlds[w][0]} ${worlds[w][1]}</h1><p>敵：${worlds[w][2]} · 1桁どうしの計算<br>目標数を倒せばステージクリア！</p><div class="stage-grid">${[1,2,3,4,5,6].map(n=>`<button class="stage-node" data-stage="${n}" ${w*6+n>unlocked?'disabled':''}>${w+1}-${n}${w*6+n<unlocked?' ★':''}${w*6+n>unlocked?' 🔒':''}</button>`).join('')}</div><button class="primary" id="toMap">← ワールドマップへ</button>`);$('overlay').querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{stageLevel=Number(b.dataset.stage);gameMode='stage';$('overlay').classList.remove('world-overlay','title-overlay');start()});$('toMap').onclick=showMap}
+function showStages(w){stageWorld=w;worldOverlay(`<h1>${worlds[w][0]} ${worlds[w][1]}</h1><p>敵：${worlds[w][2]} · 計算ステージ<br>目標数を倒せばステージクリア！</p><div class="stage-grid">${[1,2,3,4,5,6].map(n=>`<button class="stage-node" data-stage="${n}" ${n>cityProgress[w]?'disabled':''}>${w+1}-${n}${n<cityProgress[w]?' ★':''}${n>cityProgress[w]?' 🔒':''}</button>`).join('')}</div><button class="primary" id="toMap">← ワールドマップへ</button>`);$('overlay').querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{stageLevel=Number(b.dataset.stage);gameMode='stage';$('overlay').classList.remove('world-overlay','title-overlay');start()});$('toMap').onclick=showMap}
 $('start').onclick=showTitle;updateHUD();showTitle();
 })();
 </script></body></html>
