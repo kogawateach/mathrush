@@ -520,7 +520,7 @@ function menuScreen(title,body){
 }
 function showTitle(){
   gameMode='arcade';
-  worldOverlay(`<div class="title-brand"><div class="title-spark">⚡ 🏘️ ⚡</div><h1>MATH RUSH</h1><p>計算でモンスターを倒そう！</p></div><div class="title-actions"><button class="primary" id="goMap">🗺️ 冒険モード</button><button class="primary arcade-btn" id="goArcade">⚡ 60秒 スコアアタック</button></div><div class="title-grid"><button id="goRank">🏆<span>ランキング</span></button><button id="goDex">📖<span>モンスター図鑑</span></button><button id="goAwards">🏅<span>実績・メダル</span></button><button id="goSettings">⚙️<span>設定</span></button><button id="goShop">🛒<span>ショップ</span></button><button id="goRecords">📋<span>攻略記録</span></button><button id="goRestore">🏘️<span>街の復興</span></button></div><div class="high">💰 ${currency(coins)}　｜　🏆 BEST ${best.toLocaleString()}</div><div class="title-version">v7.10 · SPIRAL WORLD</div>`);
+  worldOverlay(`<div class="title-brand"><div class="title-spark">⚡ 🏘️ ⚡</div><h1>MATH RUSH</h1><p>計算でモンスターを倒そう！</p></div><div class="title-actions"><button class="primary" id="goMap">🗺️ 冒険モード</button><button class="primary arcade-btn" id="goArcade">⚡ 60秒 スコアアタック</button></div><div class="title-grid"><button id="goRank">🏆<span>ランキング</span></button><button id="goDex">📖<span>モンスター図鑑</span></button><button id="goAwards">🏅<span>実績・メダル</span></button><button id="goSettings">⚙️<span>設定</span></button><button id="goShop">🛒<span>ショップ</span></button><button id="goRecords">📋<span>攻略記録</span></button><button id="goRestore">🏘️<span>街の復興</span></button></div><div class="high">💰 ${currency(coins)}　｜　🏆 BEST ${best.toLocaleString()}</div><div class="title-version">v7.11 · DIAL WORLD</div>`);
   $('overlay').classList.remove('world-overlay','subpage-overlay');$('overlay').classList.add('title-overlay');
   $('goArcade').onclick=()=>{gameMode='arcade';$('overlay').classList.remove('world-overlay','title-overlay','subpage-overlay');start()};
   $('goMap').onclick=showMap;
@@ -544,21 +544,47 @@ function showRestoration(){
  menuScreen('🏘️ 街の復興',`<div style="max-height:72vh;overflow:auto">${html}</div>`);
  $('overlay').querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.restore),cost=costs[cityRestoration[i]];if(coins<cost){b.textContent='コインが足りない！';return}coins-=cost;cityRestoration[i]++;saveCoins();saveCities();showRestoration()});
 }
-// Spiral polar map: 80 routes, 15-degree detents, radial stage travel.
+// Spiral polar map: 80 routes, 5-degree live dial detents, radial stage travel.
 const routeNames=['足し算','引き算','かけ算','割り算','四則演算','小数','分数','約数・倍数','割合','単位換算','正負の数','文字式','一次方程式','連立方程式','展開','因数分解','平方根','二次方程式','関数の値','整式','不等式','絶対値','高次方程式','複素数','指数','対数','三角比','三角関数','三角恒等式','逆三角関数','数列','漸化式','順列・組合せ','ベクトル','複素数平面','極限','微分','積分','面積・体積','高度な微分','高度な積分','広義積分','テイラー展開','無限級数','偏微分','全微分','極値','重積分','座標変換','ベクトル解析','線積分','曲面積分','微分方程式','Fourier級数','Laplace変換','行列','行列式','逆行列','連立一次方程式','階数','基底・次元','線形写像','固有値','対角化','直交化','二次形式','Jordan標準形','複素関数','複素微分','複素積分','Laurent展開','留数','留数定理','合同式','Euclid互除法','置換','多項式','有限体','線形計画','数値計算'];
 const spiralColors=['#224f40','#214c68','#49366e','#733c49','#69512b','#2d6562','#4b497b','#755244','#426a42','#50456d'];
 let mapAngle=30,mapRadius=0;
 function showMap(){
-  const shell=`<div class="spiral-head"><button class="map-back" id="toTitle">← タイトル</button><div><strong>🌀 SPIRAL WORLD</strong><small id="spiralLayer"></small></div><button class="map-back" id="spiralHelp">？</button></div><div id="spiralViewport"><svg id="spiralSvg" viewBox="0 0 360 590" preserveAspectRatio="none" aria-label="螺旋ワールドマップ"></svg><div id="spiralTip">円弧に沿って回転 · 半径方向に移動</div></div><div class="spiral-foot"><div id="spiralSelected"></div><div class="spiral-controls"><button id="spinPrev">↶ 15°</button><button id="radiusIn">− 近く</button><button id="radiusOut">＋ 遠く</button><button id="spinNext">15° ↷</button></div></div>`;
+  const shell=`<div class="spiral-head"><button class="map-back" id="toTitle">← タイトル</button><div><strong>🌀 SPIRAL WORLD</strong><small id="spiralLayer"></small></div><button class="map-back" id="spiralHelp">？</button></div><div id="spiralViewport"><svg id="spiralSvg" viewBox="0 0 360 590" preserveAspectRatio="none" aria-label="螺旋ワールドマップ"></svg><div id="spiralTip">円弧をなぞってダイヤル回転（5°刻み） · 半径方向に移動</div></div><div class="spiral-foot"><div id="spiralSelected"></div><div class="spiral-controls"><button id="spinPrev">↶ 5°</button><button id="radiusIn">− 近く</button><button id="radiusOut">＋ 遠く</button><button id="spinNext">5° ↷</button></div></div>`;
   worldOverlay(shell);$('toTitle').onclick=showTitle;
-  $('spiralHelp').onclick=()=>alert('主人公は左下に固定。円弧に沿うスワイプで15°ずつ回転し、半径方向のスワイプでステージを移動します。現在、戦闘可能なのは最初の5つの街です。残り75街はマップの先行公開です。');
-  $('spinPrev').onclick=()=>{mapAngle-=15;drawSpiral()};$('spinNext').onclick=()=>{mapAngle+=15;drawSpiral()};
+  $('spiralHelp').onclick=()=>alert('主人公は左下に固定。円弧を指でなぞると、指と同じ方向に5°ずつカリカリ回転します。半径方向の移動はステージ移動です。現在、戦闘可能なのは最初の5つの街です。残り75街はマップの先行公開です。');
+  $('spinPrev').onclick=()=>{mapAngle=Math.max(0,mapAngle-5);drawSpiral()};$('spinNext').onclick=()=>{mapAngle=Math.min(3595,mapAngle+5);drawSpiral()};
   $('radiusIn').onclick=()=>{mapRadius=Math.max(0,mapRadius-1);drawSpiral()};$('radiusOut').onclick=()=>{mapRadius=Math.min(24,mapRadius+1);drawSpiral()};
   const vp=$('spiralViewport');let touch=null;
   const coords=e=>{const rect=vp.getBoundingClientRect();return {x:(e.clientX-rect.left)/rect.width*360,y:(e.clientY-rect.top)/rect.height*590}};
-  vp.addEventListener('pointerdown',e=>{const p=coords(e);touch={x:p.x,y:p.y,theta:Math.atan2(560-p.y,p.x-17),r:Math.hypot(p.x-17,560-p.y),lastTheta:Math.atan2(560-p.y,p.x-17),angular:0,radial:0,moved:false};vp.setPointerCapture(e.pointerId)});
-  vp.addEventListener('pointermove',e=>{if(!touch)return;const p=coords(e),theta=Math.atan2(560-p.y,p.x-17),r=Math.hypot(p.x-17,560-p.y);let d=theta-touch.lastTheta;if(d>Math.PI)d-=Math.PI*2;if(d<-Math.PI)d+=Math.PI*2;touch.angular+=d;touch.lastTheta=theta;touch.radial=r-touch.r;if(Math.hypot(p.x-touch.x,p.y-touch.y)>10)touch.moved=true});
-  vp.addEventListener('pointerup',e=>{if(!touch)return;const t=touch;touch=null;if(!t.moved)return;const tangential=Math.abs(t.angular)*Math.max(65,t.r);if(tangential>Math.abs(t.radial)*.8){const ticks=Math.max(1,Math.round(Math.abs(t.angular)*180/Math.PI/15));mapAngle+=Math.sign(t.angular)*ticks*15}else{mapRadius=Math.max(0,Math.min(24,mapRadius-Math.round(t.radial/48)))}drawSpiral()});
+  const polar=p=>({theta:Math.atan2(560-p.y,p.x-17),r:Math.hypot(p.x-17,560-p.y)});
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  vp.addEventListener('pointerdown',e=>{
+    const p=coords(e),q=polar(p);
+    touch={id:e.pointerId,x:p.x,y:p.y,r:q.r,lastTheta:q.theta,angular:0,radial:0,startAngle:mapAngle,startRadius:mapRadius,mode:null,moved:false};
+    vp.setPointerCapture(e.pointerId);
+  });
+  vp.addEventListener('pointermove',e=>{
+    if(!touch||touch.id!==e.pointerId)return;
+    const p=coords(e),q=polar(p),t=touch;
+    let delta=q.theta-t.lastTheta;
+    if(delta>Math.PI)delta-=2*Math.PI;
+    if(delta<-Math.PI)delta+=2*Math.PI;
+    t.angular+=delta;t.lastTheta=q.theta;t.radial=q.r-t.r;
+    if(!t.moved&&Math.hypot(p.x-t.x,p.y-t.y)>9)t.moved=true;
+    if(!t.moved)return;
+    const arc=Math.abs(t.angular)*Math.max(65,t.r);
+    if(!t.mode&&Math.max(arc,Math.abs(t.radial))>12)t.mode=arc>Math.abs(t.radial)*.85?'dial':'radial';
+    if(t.mode==='dial'){
+      // Clockwise finger motion decreases mathematical theta: rotate map clockwise too.
+      // Snap continuously to 5-degree detents; no momentum on release.
+      const next=t.startAngle-Math.round(t.angular*180/Math.PI/5)*5;
+      if(next!==mapAngle){mapAngle=clamp(next,0,3595);drawSpiral()}
+    }else if(t.mode==='radial'){
+      const next=clamp(t.startRadius-Math.round(t.radial/48),0,24);
+      if(next!==mapRadius){mapRadius=next;drawSpiral()}
+    }
+  });
+  vp.addEventListener('pointerup',e=>{if(touch&&touch.id===e.pointerId)touch=null});
   vp.addEventListener('pointercancel',()=>{touch=null});
   drawSpiral();
 }
@@ -569,6 +595,13 @@ function drawSpiral(){
  const sector=Math.floor(mapAngle/360),bg=spiralColors[((sector%10)+10)%10];
  svg.replaceChildren();node('rect',{x:0,y:0,width:360,height:590,fill:bg});
  node('path',{d:`M${cx},${cy} L${cx},0 L360,0 L360,${cy} Z`,fill:'#ffffff',opacity:'.025'});
+ // Five-degree dial ticks around the outer rim of the visible quadrant.
+ for(let a=0;a<=90;a+=5){
+   const worldA=mapAngle-45+a,major=Math.abs(worldA/45-Math.round(worldA/45))<.001;
+   const rad=a*Math.PI/180,outer=302,inner=major?280:291;
+   node('line',{x1:cx+inner*Math.cos(rad),y1:cy-inner*Math.sin(rad),x2:cx+outer*Math.cos(rad),y2:cy-outer*Math.sin(rad),stroke:major?'#ffe08a':'#c9e1e8','stroke-width':major?3:1.5,opacity:major?'.95':'.6'});
+ }
+
  for(let r=80;r<800;r+=75){const rr=r-mapRadius*48;if(rr>0&&rr<750)node('path',{d:`M ${cx} ${cy-rr} A ${rr} ${rr} 0 0 1 ${cx+rr} ${cy}`,fill:'none',stroke:'#ffffff',opacity:'.13','stroke-dasharray':'3 8'})}
  // The visible quadrant is a window into an unwrapped angle, not a modulo-360 map.
  // Center direction is 45 degrees; each 45 degrees contains one route.
