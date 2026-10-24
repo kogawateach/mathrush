@@ -520,7 +520,7 @@ function menuScreen(title,body){
 }
 function showTitle(){
   gameMode='arcade';
-  worldOverlay(`<div class="title-brand"><div class="title-spark">⚡ 🏘️ ⚡</div><h1>MATH RUSH</h1><p>計算でモンスターを倒そう！</p></div><div class="title-actions"><button class="primary" id="goMap">🗺️ 冒険モード</button><button class="primary arcade-btn" id="goArcade">⚡ 60秒 スコアアタック</button></div><div class="title-grid"><button id="goRank">🏆<span>ランキング</span></button><button id="goDex">📖<span>モンスター図鑑</span></button><button id="goAwards">🏅<span>実績・メダル</span></button><button id="goSettings">⚙️<span>設定</span></button><button id="goShop">🛒<span>ショップ</span></button><button id="goRecords">📋<span>攻略記録</span></button><button id="goRestore">🏘️<span>街の復興</span></button></div><div class="high">💰 ${currency(coins)}　｜　🏆 BEST ${best.toLocaleString()}</div><div class="title-version">v7.11 · DIAL WORLD</div>`);
+  worldOverlay(`<div class="title-brand"><div class="title-spark">⚡ 🏘️ ⚡</div><h1>MATH RUSH</h1><p>計算でモンスターを倒そう！</p></div><div class="title-actions"><button class="primary" id="goMap">🗺️ 冒険モード</button><button class="primary arcade-btn" id="goArcade">⚡ 60秒 スコアアタック</button></div><div class="title-grid"><button id="goRank">🏆<span>ランキング</span></button><button id="goDex">📖<span>モンスター図鑑</span></button><button id="goAwards">🏅<span>実績・メダル</span></button><button id="goSettings">⚙️<span>設定</span></button><button id="goShop">🛒<span>ショップ</span></button><button id="goRecords">📋<span>攻略記録</span></button><button id="goRestore">🏘️<span>街の復興</span></button></div><div class="high">💰 ${currency(coins)}　｜　🏆 BEST ${best.toLocaleString()}</div><div class="title-version">v7.12 · RUINED WORLD</div>`);
   $('overlay').classList.remove('world-overlay','subpage-overlay');$('overlay').classList.add('title-overlay');
   $('goArcade').onclick=()=>{gameMode='arcade';$('overlay').classList.remove('world-overlay','title-overlay','subpage-overlay');start()};
   $('goMap').onclick=showMap;
@@ -594,6 +594,23 @@ function drawSpiral(){
  const node=(tag,attrs,parent=svg)=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));parent.appendChild(e);return e};
  const sector=Math.floor(mapAngle/360),bg=spiralColors[((sector%10)+10)%10];
  svg.replaceChildren();node('rect',{x:0,y:0,width:360,height:590,fill:bg});
+ // Ruined landscape: broken stone roads, rubble, cracked ground, dead trees.
+ const scenery=node('g',{'pointer-events':'none'});
+ for(let k=0;k<34;k++){
+   const x=24+(k*79+31)%318,y=34+(k*131+47)%485;
+   const size=3+(k*7)%9;
+   node('path',{d:`M${x-size} ${y+size} l${size*.7} -${size*1.4} l${size*.9} ${size*.35} l${size*.6} -${size*.5} l${size*.8} ${size*1.55} Z`,fill:k%3===0?'#a9a69a':'#6c756f',opacity:'.20'},scenery);
+ }
+ for(let k=0;k<11;k++){
+   const x=38+(k*113)%288,y=62+(k*97)%450;
+   node('path',{d:`M${x} ${y} l-9 -7 l5 -12 m-5 12 l13 8 l8 -9`,fill:'none',stroke:'#101f22','stroke-width':2,opacity:'.36','stroke-linecap':'round'},scenery);
+ }
+ for(let k=0;k<8;k++){
+   const x=51+(k*91)%267,y=80+(k*127)%418;
+   node('path',{d:`M${x-13} ${y+8} l2 -18 l9 -7 l8 8 l1 17 M${x-16} ${y-11} l18 -3 M${x-4} ${y+8} l-1 -11`,fill:'none',stroke:'#a4a59a','stroke-width':3,opacity:'.29','stroke-linecap':'square'},scenery);
+ }
+ node('path',{d:'M32 558 Q90 480 55 407 T130 241 T112 44',fill:'none',stroke:'#8a8372','stroke-width':16,opacity:'.09','stroke-dasharray':'24 12'},scenery);
+ node('rect',{x:0,y:0,width:360,height:590,fill:'#0d0b18',opacity:'.10'});
  node('path',{d:`M${cx},${cy} L${cx},0 L360,0 L360,${cy} Z`,fill:'#ffffff',opacity:'.025'});
  // Five-degree dial ticks around the outer rim of the visible quadrant.
  for(let a=0;a<=90;a+=5){
@@ -612,17 +629,19 @@ function drawSpiral(){
    const rad=relative*Math.PI/180,co=Math.cos(rad),si=Math.sin(rad);
    const x2=cx+800*co,y2=cy-800*si;
    node('line',{x1:cx,y1:cy,x2,y2,stroke:i<5?'#efce7a':'#c3d0e6','stroke-width':Math.abs(relative-45)<8?4:2,opacity:i<5?'.86':'.4'});
-   const total=i<5?6:6;
+   const total=6;
    for(let j=1;j<=total;j++){
-     const rr=90+j*75-mapRadius*48;if(rr<43||rr>590)continue;
+     // Reveal the route beyond stage 1 only after clearing stage 1.
+     if(i<5&&j>1&&cityProgress[i]<=1)continue;
+     const rr=24+j*75-mapRadius*48;if(rr<43||rr>590)continue;
      const x=cx+rr*co,y=cy-rr*si;if(x<20||x>349||y<18||y>545)continue;
      const unlocked=i<5&&j<=cityProgress[i],done=i<5&&j<cityProgress[i];
      const g=node('g',{'data-route':i,'data-level':j,style:'cursor:pointer'});
-     node('circle',{cx:x,cy:y,r:j===6?18:15,fill:done?'#69d4a2':unlocked?'#f1ce75':'#526477',stroke:j===6?'#f7d66b':'#e4eaf1','stroke-width':2,opacity:i<5?1:'.7'},g);
+     node('circle',{cx:x,cy:y,r:j===6?18:15,fill:done?'#69d4a2':unlocked?'#f1ce75':'#526477',stroke:j===6?'#f7d66b':'#e4eaf1','stroke-width':2,opacity:i<5?(unlocked?1:.38):'.7'},g);
      const label=node('text',{x,y:y+4,'text-anchor':'middle','font-size':j===6?15:11,'font-weight':'bold',fill:'#15263c'},g);label.textContent=j===6?'♛':j;
      g.addEventListener('click',()=>{if(i>=5){$('spiralSelected').textContent=`${i+1}. ${routeNames[i]}の街：準備中`;return}if(!unlocked){$('spiralSelected').textContent=`${i+1}-${j} は未解放`;return}stageWorld=i;stageLevel=j;gameMode='stage';$('overlay').classList.remove('world-overlay');start()});
    }
-   const rr=260-mapRadius*48;if(rr>60){const x=cx+rr*co,y=cy-rr*si;if(x>20&&x<350&&y>30&&y<545){const text=node('text',{x,y:y-21,'text-anchor':'middle','font-size':13,'font-weight':'bold',fill:'#fff',stroke:bg,'stroke-width':3,'paint-order':'stroke'});text.textContent=routeNames[i]}}
+   const rr=260-mapRadius*48;if(rr>60){const x=cx+rr*co,y=cy-rr*si;if(x>20&&x<350&&y>30&&y<545){const text=node('text',{x,y:y-21,'text-anchor':'middle','font-size':13,'font-weight':'bold',fill:'#fff',stroke:bg,'stroke-width':3,'paint-order':'stroke'});text.textContent=`${i+1}. ${routeNames[i]}`}}
  }
  node('circle',{cx,y:cy,r:20,fill:'#f7d78e',stroke:'#fff','stroke-width':2});const hero=node('text',{x:cx,y:cy+7,'text-anchor':'middle','font-size':23});hero.textContent='🧙';
  const near=Math.max(0,Math.min(79,Math.round(mapAngle/45)));$('spiralLayer').textContent=`${sector+1}周目 · ${mapAngle}° · 距離 ${mapRadius+1}`;
