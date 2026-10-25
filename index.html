@@ -14,7 +14,8 @@
 .ammo button{height:auto!important;min-height:105px!important;padding:12px!important;border-radius:11px!important}
 .ammo .formula{font-size:clamp(16px,4.1vw,22px)!important}
 .answers button{min-height:53px}
-</style></head><body><main><div class="top"><div><b>⚡ MATH RUSH</b><div class="tag">微分砲弾 · 操作感プロトタイプ v0.5</div></div><button class="reset" onclick="reset()">やり直す</button></div><div class="hud"><span>♥ HP <strong id="hp">100</strong></span><span>撃破 <strong id="kills">0</strong></span><span>初回正解 <strong id="accuracy">0/0</strong></span></div><div class="arena" id="arena"><div class="lanes"><div class="lane" id="lane0"><small>LEFT</small></div><div class="lane" id="lane1"><small>CENTER</small></div><div class="lane" id="lane2"><small>RIGHT</small></div></div><div class="hero" id="hero">🚀</div><div class="cannon problem-panel" id="cannon"><div class="expr" id="cannonExpr"><span class="operator">d/dx</span> (<span class="blank" id="blank">　　　　　</span>)</div></div></div><div class="controls" id="controls"><button onclick="control(0)">◀ LEFT</button><button onclick="control(1)">● CENTER</button><button onclick="control(2)">RIGHT ▶</button></div><div class="choice-area"><div class="ammo" id="ammoArea"><button class="left" id="leftAmmo" onclick="load('left')"></button><button class="right" id="rightAmmo" onclick="load('right')"></button></div><div class="answers" id="answers"><button disabled>—</button><button disabled>—</button><button disabled>—</button><button disabled>—</button></div></div><div class="hint" id="hint">左は易しめ、右は難しめ。問題を選ぶと4択が現れる</div><div class="bottom"><span class="tag">難易度</span><select id="difficulty" onchange="reset()"><option value="easy">EASY 自動発射</option><option value="normal" selected>NORMAL 手動発射</option><option value="hard">HARD 手動発射</option></select></div><div class="info">試作：多項式の微分のみ。モンスターはリアルタイム接近。到達時、同じレーンならダメージ。</div></main><script>
+.hero{display:none!important}.answer-projectile{position:fixed;z-index:1100;pointer-events:none;white-space:nowrap;max-width:90vw;padding:7px 12px;border:2px solid #6dffbd;border-radius:12px;background:#123d39;color:#d9ffed;font-size:clamp(17px,4vw,25px);font-weight:850;box-shadow:0 0 22px #42e6a888;text-shadow:0 0 7px #a6ffcf;transform-origin:center;will-change:transform,opacity}.answer-impact{position:absolute;z-index:12;pointer-events:none;transform:translate(-50%,-50%);font-size:46px;color:#b3ffcd;animation:answerPop .42s ease-out forwards}@keyframes answerPop{0%{opacity:1;transform:translate(-50%,-50%) scale(.4)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}}
+</style></head><body><main><div class="top"><div><b>⚡ MATH RUSH</b><div class="tag">微分砲弾 · 操作感プロトタイプ v0.6</div></div><button class="reset" onclick="reset()">やり直す</button></div><div class="hud"><span>♥ HP <strong id="hp">100</strong></span><span>撃破 <strong id="kills">0</strong></span><span>初回正解 <strong id="accuracy">0/0</strong></span></div><div class="arena" id="arena"><div class="lanes"><div class="lane" id="lane0"><small>LEFT</small></div><div class="lane" id="lane1"><small>CENTER</small></div><div class="lane" id="lane2"><small>RIGHT</small></div></div><div class="cannon problem-panel" id="cannon"><div class="expr" id="cannonExpr"><span class="operator">d/dx</span> (<span class="blank" id="blank">　　　　　</span>)</div></div></div><div class="controls" id="controls"><button onclick="control(0)">◀ LEFT</button><button onclick="control(1)">● CENTER</button><button onclick="control(2)">RIGHT ▶</button></div><div class="choice-area"><div class="ammo" id="ammoArea"><button class="left" id="leftAmmo" onclick="load('left')"></button><button class="right" id="rightAmmo" onclick="load('right')"></button></div><div class="answers" id="answers"><button disabled>—</button><button disabled>—</button><button disabled>—</button><button disabled>—</button></div></div><div class="hint" id="hint">左は易しめ、右は難しめ。問題を選ぶと4択が現れる</div><div class="bottom"><span class="tag">難易度</span><select id="difficulty" onchange="reset()"><option value="easy">EASY 自動発射</option><option value="normal" selected>NORMAL 手動発射</option><option value="hard">HARD 手動発射</option></select></div><div class="info">試作：多項式の微分のみ。モンスターはリアルタイム接近。到達時、同じレーンならダメージ。</div></main><script>
 const $=id=>document.getElementById(id),rand=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 let animationToken=0;let lane=1,hp=100,kills=0,first=0,solved=0,ammo={},shell=null,phase='empty',enemies=[],eid=0,last=0,spawnClock=0,active=true,run=0;
 function poly(terms){let s='';for(let [c,n] of terms){if(!c)continue;let t=(Math.abs(c)===1&&n>0?'':Math.abs(c))+(n?'x'+(n>1?'<sup>'+n+'</sup>':''):'');s+=(s?(c<0?' − ':' + '):(c<0?'−':''))+t}return s||'0'}
@@ -36,13 +37,29 @@ function flyFormula(from,html,target,done){
   ],{duration:750,easing:'cubic-bezier(.24,.65,.27,1)'});
   animation.onfinish=()=>{node.remove();if(done)done()};
 }
-function fireEffect(i,progress,hit){
- const arena=$('arena'),w=arena.clientWidth,h=arena.clientHeight,x=(i+.5)*w/3;
- const y0=h-90,y1=hit?(8+progress*76)*h/100:-18;
- const flash=document.createElement('div');flash.className='muzzle';flash.style.left=x+'px';flash.style.top=y0+'px';arena.appendChild(flash);setTimeout(()=>flash.remove(),280);
- const ball=document.createElement('div');ball.className='projectile';ball.style.left=x+'px';ball.style.top=y0+'px';arena.appendChild(ball);
- const anim=ball.animate([{top:y0+'px',opacity:1},{top:y1+'px',opacity:1}],{duration:Math.max(190,Math.abs(y0-y1)*1.15),easing:'linear'});
- anim.onfinish=()=>{ball.remove();if(hit){const blast=document.createElement('div');blast.className='blast';blast.style.left=x+'px';blast.style.top=y1+'px';arena.appendChild(blast);setTimeout(()=>blast.remove(),470)}};
+function launchAnswer(i,enemy,answer,done){
+ const arena=$('arena'),source=$('cannonExpr');
+ const a=source.getBoundingClientRect(),ar=arena.getBoundingClientRect();
+ const x=(i+.5)*arena.clientWidth/3;
+ const y=enemy?(8+enemy.progress*76)*arena.clientHeight/100:-25;
+ const targetX=ar.left+x,targetY=ar.top+y;
+ const node=document.createElement('div');node.className='answer-projectile';node.innerHTML=answer;
+ node.style.left=(a.left+a.width/2)+'px';node.style.top=(a.top+a.height/2)+'px';
+ document.body.appendChild(node);
+ const dx=targetX-(a.left+a.width/2),dy=targetY-(a.top+a.height/2);
+ const duration=Math.max(430,Math.min(950,Math.abs(dy)*1.6));
+ const animation=node.animate([
+  {transform:'translate(-50%,-50%) scale(1)',opacity:1,offset:0},
+  {transform:`translate(calc(-50% + ${dx*.5}px),calc(-50% + ${dy*.5}px)) scale(.85)`,opacity:1,offset:.55},
+  {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.65)`,opacity:1,offset:1}
+ ],{duration,easing:'cubic-bezier(.28,.45,.18,1)'});
+ animation.onfinish=()=>{node.remove();if(done)done()};
+}
+function answerImpact(i,enemy){
+ const arena=$('arena');const mark=document.createElement('div');mark.className='answer-impact';
+ mark.style.left=((i+.5)*arena.clientWidth/3)+'px';
+ mark.style.top=(enemy?(8+enemy.progress*76)*arena.clientHeight/100:-25)+'px';
+ mark.textContent='✦';arena.appendChild(mark);setTimeout(()=>mark.remove(),420);
 }
 function load(side){
  if(!active||phase!=='empty')return;
@@ -68,7 +85,7 @@ function renderShell(){
    :'<span class="operator">d/dx</span> (<span class="filled">'+shell.expr+'</span>)';
  $('cannonExpr').innerHTML=content;renderControls();
 }
-function renderControls(){let easy=$('difficulty').value==='easy';[...$('controls').children].forEach((b,i)=>{b.classList.toggle('selected',i===lane);b.classList.toggle('fire',phase==='ready'&&!easy);b.innerHTML=phase==='ready'&&!easy?'🚀 発射 '+['左','中','右'][i]:['◀ LEFT','● CENTER','RIGHT ▶'][i]})}
+function renderControls(){let easy=$('difficulty').value==='easy';[...$('controls').children].forEach((b,i)=>{b.classList.toggle('selected',i===lane);b.classList.toggle('fire',phase==='ready'&&!easy);b.innerHTML=phase==='ready'&&!easy?'発射 '+['左','中','右'][i]:['◀ LEFT','● CENTER','RIGHT ▶'][i]})}
 function renderAnswers(){$('answers').style.display=phase==='question'?'grid':'none';$('answers').innerHTML=phase==='question'?shell.options.map((o,i)=>'<button '+(shell.wrong.has(i)?'disabled class="wrong"':'')+' data-i="'+i+'">'+o+'</button>').join(''):'';$('answers').querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>answer(+b.dataset.i))}
 function answer(i){if(!active||phase!=='question'||shell.wrong.has(i))return;let value=shell.options[i];if(!shell.tried){solved++;if(value===shell.answer)first++;shell.tried=true}if(value!==shell.answer){shell.wrong.add(i);hp=Math.max(0,hp-($('difficulty').value==='easy'?0:$('difficulty').value==='hard'?15:8));$('arena').classList.remove('flash');void $('arena').offsetWidth;$('arena').classList.add('flash');$('hint').textContent='❌ 同じ問題を考え直そう';updateHud();renderAnswers();if(hp===0)gameOver();return}phase='charging';renderControls();const source=$('answers').querySelector('[data-i="'+i+'"]');
  const token=animationToken;
@@ -81,12 +98,26 @@ function answer(i){if(!active||phase!=='question'||shell.wrong.has(i))return;let
  });}
 function control(i){if(!active)return;if(phase==='ready'&&$('difficulty').value!=='easy'){lane=i;fire(i)}else{lane=i;renderControls();renderEnemies()}}
 function fireNearest(){let e=[...enemies].sort((a,b)=>b.progress-a.progress)[0];if(e){lane=e.lane;fire(lane)}else{phase='empty';shell=null;renderShell();renderAmmo();renderAnswers();$('hint').textContent='敵がいないため砲弾を消費。次を装填しよう'}}
-function fire(i){if(phase!=='ready'||!active)return;let targets=enemies.filter(e=>e.lane===i).sort((a,b)=>b.progress-a.progress),e=targets[0];fireEffect(i,e?e.progress:0,!!e);if(e){e.hp-=shell.power;if(e.hp<=0){enemies.splice(enemies.indexOf(e),1);kills++}$('hint').textContent=e.hp<=0?'🎯 撃破！':'🎯 命中！ 残りHP '+e.hp}else $('hint').textContent='砲弾は空のレーンを通過した';phase='empty';shell=null;renderShell();renderAmmo();renderAnswers();renderEnemies();updateHud()}
+function fire(i){
+ if(phase!=='ready'||!active)return;
+ const targets=enemies.filter(e=>e.lane===i).sort((a,b)=>b.progress-a.progress),e=targets[0];
+ const power=shell.power,answerText=shell.answer,token=animationToken;
+ phase='firing';renderControls();$('hint').textContent='答え「'+answerText.replace(/<[^>]*>/g,'')+'」を発射！';
+ launchAnswer(i,e,answerText,()=>{
+  if(token!==animationToken||!active)return;
+  if(e&&enemies.includes(e)){
+   answerImpact(i,e);e.hp-=power;
+   if(e.hp<=0){enemies.splice(enemies.indexOf(e),1);kills++}
+   $('hint').textContent=e.hp<=0?'🎯 撃破！':'🎯 命中！ 残りHP '+e.hp;
+  }else $('hint').textContent='答えは空のレーンを通過した';
+  phase='empty';shell=null;renderShell();renderAmmo();renderAnswers();renderEnemies();updateHud();
+ });
+}
 function updateHud(){$('hp').textContent=hp;$('kills').textContent=kills;$('accuracy').textContent=first+'/'+solved}
 function spawn(){if(enemies.length>=5)return;let l=rand(0,2),type=rand(0,4),icons=['🟢','🦇','👺','👻','🐉'],health=[75,100,150,200,300];enemies.push({id:++eid,lane:l,icon:icons[type],hp:health[type],progress:0})}
-function renderEnemies(){for(let i=0;i<3;i++)$('lane'+i).classList.toggle('active',lane===i);$('hero').style.left=lane*100/3+'%';document.querySelectorAll('.enemy').forEach(x=>x.remove());let arena=$('arena');for(let e of enemies){let node=document.createElement('div');node.className='enemy';node.style.left=(e.lane+.5)*100/3+'%';node.style.top=(8+e.progress*76)+'%';node.innerHTML=e.icon+'<small>HP '+e.hp+'</small>';arena.appendChild(node)}}
+function renderEnemies(){for(let i=0;i<3;i++)$('lane'+i).classList.toggle('active',lane===i);document.querySelectorAll('.enemy').forEach(x=>x.remove());let arena=$('arena');for(let e of enemies){let node=document.createElement('div');node.className='enemy';node.style.left=(e.lane+.5)*100/3+'%';node.style.top=(8+e.progress*76)+'%';node.innerHTML=e.icon+'<small>HP '+e.hp+'</small>';arena.appendChild(node)}}
 function gameOver(){active=false;$('hint').textContent='GAME OVER · やり直すボタンで再挑戦';renderControls()}
 function tick(now,token){if(token!==run||!active)return;let dt=last?Math.min(now-last,100):0;last=now;spawnClock+=dt;let diff=$('difficulty').value,rate=diff==='easy'?.000004:diff==='hard'?.000016:.000010;if(spawnClock>(diff==='easy'?8500:diff==='hard'?4300:6000)){spawnClock=0;spawn()}for(let e of [...enemies]){e.progress+=dt*rate;if(e.progress>=1){if(e.lane===lane){hp=Math.max(0,hp-(diff==='easy'?10:diff==='hard'?25:15));$('hint').textContent='💥 モンスターが砲台に衝突！';updateHud()}enemies.splice(enemies.indexOf(e),1);if(hp===0)gameOver()}}renderEnemies();requestAnimationFrame(t=>tick(t,token))}
-function reset(){run++;animationToken++;document.querySelectorAll('.flying-formula,.projectile,.blast,.muzzle').forEach(n=>n.remove());active=true;hp=100;kills=0;first=0;solved=0;lane=1;enemies=[];eid=0;last=0;spawnClock=0;phase='empty';shell=null;ammo={left:question('left'),right:question('right')};renderAmmo();renderShell();renderAnswers();updateHud();$('hint').textContent='左右どちらかの問題を選ぼう';spawn();renderEnemies();requestAnimationFrame(t=>tick(t,run))}
+function reset(){run++;animationToken++;document.querySelectorAll('.flying-formula,.projectile,.blast,.muzzle,.answer-projectile,.answer-impact').forEach(n=>n.remove());active=true;hp=100;kills=0;first=0;solved=0;lane=1;enemies=[];eid=0;last=0;spawnClock=0;phase='empty';shell=null;ammo={left:question('left'),right:question('right')};renderAmmo();renderShell();renderAnswers();updateHud();$('hint').textContent='左右どちらかの問題を選ぼう';spawn();renderEnemies();requestAnimationFrame(t=>tick(t,run))}
 reset();
 </script></body></html>
